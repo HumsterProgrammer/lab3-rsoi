@@ -128,7 +128,7 @@ def get_loyalty():
             timeout=10,
         )
     except requests.RequestException:
-        return _err("Loyalty service unavailable", 503)
+        return _err("Loyalty Service unavailable", 503)
     if r.status_code != 200:
         return _err(r.json().get("message", "Error"), r.status_code)
     return jsonify(r.json()), 200
@@ -265,7 +265,7 @@ def create_reservation():
             timeout=10,
         )
     except requests.RequestException:
-        return _err("Loyalty service unavailable", 503)
+        return _err("Loyalty Service unavailable", 503)
     if r.status_code != 200:
         return _err(r.json().get("message", "User not found"), r.status_code)
     loyalty = r.json()
@@ -337,7 +337,7 @@ def create_reservation():
             )
         except requests.RequestException:
             pass
-        return _err("Loyalty service unavailable", 503)
+        return _err("Loyalty Service unavailable", 503)
 
     return jsonify({
         "reservationUid": reservation_uid,
