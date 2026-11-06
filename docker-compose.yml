@@ -1,20 +1,67 @@
-version: "3"
+#version: "3"
 services:
   postgres:
-    image: library/postgres:13
-    container_name: postgres
-    restart: on-failure
+    image: postgres:15
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
-    volumes:
-      - db-data:/var/lib/postgresql/data
-      - ./postgres/:/docker-entrypoint-initdb.d/
     ports:
       - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./postgres/:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
 
-# TODO добавить сервисы
+  loyalty:
+    build: ./v2/service_loyalty
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: loyalties
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports: ["8050:8050"]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  payment:
+    build: ./v2/service_payment
+    environment:
+      DB_HOST: postgres
+      DB_NAME: payments
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports: ["8060:8060"]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  reservation:
+    build: ./v2/service_reservation
+    environment:
+      DB_HOST: postgres
+      DB_NAME: reservations
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports: ["8070:8070"]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  gateway:
+    build: ./v2/service_gateway
+    environment:
+      RESERVATION_URL: http://reservation:8070
+      PAYMENT_URL: http://payment:8060
+      LOYALTY_URL: http://loyalty:8050
+    ports: ["8080:8080"]
+    depends_on:
+      - reservation
+      - payment
+      - loyalty
 
 volumes:
-  db-data:
+  pg-data:
